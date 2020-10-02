@@ -31,8 +31,9 @@ var Utils = {
 var CookieManager = {
     trackingCookie: 'tracking',
     setCookie: function(cname, cvalue) {
+        var chours = 1; //number of hours before expires
         var d = new Date();
-        d.setTime(d.getTime() + (1*60*24*60*60*1000));
+        d.setTime(d.getTime() + (chours*60*24*60*60*1000));
         var expires = "expires="+ d.toUTCString();
         document.cookie = cname + "=" + cvalue + ";" + expires + "; path=/";
     },
@@ -48,26 +49,22 @@ var TrackingApp = {
         var tracking = JSON.parse(App.cookie.getCookie(App.cookie.trackingCookie));
     
         var marketingUrl = location.href.match(/(\.inmemori\.com\/.*\/)/g);
-        var isMarketing = marketingUrl ? true : false;
+        var isMarketing = !! marketingUrl;
         var isContent = location.href.match(/(\.inmemori\.com\/content\/)./g) ? true : false;
 
         if (isMarketing) {
             var marketingSubDirectory = marketingUrl[0].split('/')[1];
 
-            // All marketing website page beside the home page
-            if (marketingSubDirectory) {
-                tracking.mkt_source = encodeURI(marketingSubDirectory);
-            }
+            // all marketing website page beside the home page
+            if (marketingSubDirectory) tracking.mkt_source = encodeURI(marketingSubDirectory);
 
-            // Will contain the page title if available (content title / testimonials title)
-            if ($('.post-title').text()) {
-                tracking.mkt_content = encodeURI($('.post-title').text());
-            }
+            // will contain the page title if available (content title / testimonials title)
+            if ($('.post-title').text()) tracking.mkt_content = encodeURI($('.post-title').text());
             
-            // Only inside a content, will be the second tag-hash parameter
+            // only inside a content, will be the second tag-hash parameter
             if (isContent) {
-                var tagHashs = $('body').attr("class").split(/\s+/).filter(function(c) { return c.startsWith('tag-hash-');});
-                tracking.mkt_campaign = tagHashs.length >= 2 ? tagHashs[1].replaceAll('tag-hash-', '') : undefined;
+                var tagHashs = $('body').attr("class").split(/\s+/).filter(function(c) { return c.startsWith('tag-hash-'); });
+                tracking.mkt_campaign = tagHashs.length >= 2 ? tagHashs[1].replace('tag-hash-', '') : undefined;
             }
         }
     
