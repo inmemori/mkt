@@ -1,105 +1,66 @@
+// # Dependencies:
+// - window.$        [https://code.jquery.com/jquery-1.11.3.min.js]
+// - window.Cookies  [https://github.com/js-cookie/js-cookie]
 
-var Utils = {
-    getUrlParams: function(search) {
-        if (!search)
-            return {};
+window.Utils = {
+  getUrlParams: function(key, url) {
+    var params = {};
+    url = (url || window.location.search).split('?')[1] || '';
+    url.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) { params[decodeURIComponent(key)] = decodeURIComponent(value); })
+    return key ? params[key] : params;
+  },
+  buildUrl: function(url, params) {
+    url += url.indexOf("?") === -1 ? "?" : "&";
+    return url + $.param(params);
+  },
+  buildLinks: function(pattern, params) {
+    var links = $('a[href*="'+pattern+'"]')
+    links.each(function(i, a) { a.href = Utils.buildUrl(a.href, params); });
+    console.log('buildLinks', links.length)
+  }
+};
 
-        var hashes = search.slice(search.indexOf('?') + 1).split('&');
-        var params = {};
-        hashes.map(function(hash) {
-            var split = hash.split('=');
-            var key = split[0];
-            var val = split[1];
-            params[key] = decodeURIComponent(val);
-        });
-        return params;
-    },
-    spreadObject: function(source, target) {
-        var keys = Object.keys(source);
-        for (var i = 0; i < keys.length; i++) target[keys[i]] = source[keys[i]];
-        return target;
-    },
-    generateParamsString: function(params) {
-        var str = "";
+window.App = {
+  query: Utils.getUrlParams(),
+  tracking: {},
+  mkts: {}
+};
 
-        var keys = Object.keys(params);
-        for (var i = 0; i < keys.length; i++) str = str + '&' + keys[i] + '=' + encodeURI(params[keys[i]]);
-        return str;
+App.init = function() {
+  App.setTracking(App.query);
+  App.setMkts();
+  Utils.buildLinks('/welcome', $.extend({}, App.tracking, App.mkts));
+}
+
+App.setTracking = function(data) {
+  var tracking = $.extend({}, JSON.parse(Cookies.get('im_tracking') || '{}'), data);
+  if (!tracking.subrefferrer && document.referrer) tracking.subrefferrer = document.referrer;
+  Cookies.set('im_tracking', JSON.stringify(tracking), { expires: 1, path: '/' });
+  App.tracking = tracking
+  console.log('setTracking', App.tracking)
+}
+
+App.setMkts = function(data) {
+  if(data) App.mkts = data
+  else {
+    data = {}
+    var subdir = location.href.split('/')[1]
+
+    if(subdir) data.mkt_source = subdir;
+
+    // will contain the page title if available (content title / testimonials title)
+    if($('.post-title').text()) data.mkt_content = $('.post-title').text();
+
+    if(subdir == 'content') {
+      var tagHashs = $('body').attr("class").split(/\s+/).filter(function(c) { return c.startsWith('tag-hash-'); });
+      if(tagHashs.length >= 2) data.mkt_campaign = tagHashs[1].replace('tag-hash-', '');
     }
-};
 
-var CookieManager = {
-    trackingCookie: 'tracking',
-    setCookie: function(cname, cvalue) {
-        var chours = 1; //number of hours before expires
-        var d = new Date();
-        d.setTime(d.getTime() + (chours*60*24*60*60*1000));
-        var expires = "expires="+ d.toUTCString();
-        document.cookie = cname + "=" + cvalue + ";" + expires + "; path=/";
-    },
-    getCookie: function (cname) {
-        var v = document.cookie.match('(^|;) ?' + cname + '=([^;]*)(;|$)');
-        return v ? v[2] : null;
-    },
-    deleteCookie: function(cname) { CookieManager.setCookie(cname, ""); }
-};
+    App.mkts = data
+  }
+  console.log('setMkts', App.mkts)
+}
 
-var TrackingApp = {
-    handlePageLinks: function() {
-        var tracking = JSON.parse(App.cookie.getCookie(App.cookie.trackingCookie));
-    
-        var marketingUrl = location.href.match(/(\.inmemori\.com\/.*\/)/g);
-        var isMarketing = !! marketingUrl;
-        var isContent = location.href.match(/(\.inmemori\.com\/content\/)./g) ? true : false;
-
-        if (isMarketing) {
-            var marketingSubDirectory = marketingUrl[0].split('/')[1];
-
-            // all marketing website page beside the home page
-            if (marketingSubDirectory) tracking.mkt_source = encodeURI(marketingSubDirectory);
-
-            // will contain the page title if available (content title / testimonials title)
-            if ($('.post-title').text()) tracking.mkt_content = encodeURI($('.post-title').text());
-            
-            // only inside a content, will be the second tag-hash parameter
-            if (isContent) {
-                var tagHashs = $('body').attr("class").split(/\s+/).filter(function(c) { return c.startsWith('tag-hash-'); });
-                tracking.mkt_campaign = tagHashs.length >= 2 ? tagHashs[1].replace('tag-hash-', '') : undefined;
-            }
-        }
-    
-        var params = Utils.generateParamsString(tracking);
-        $('a[href*="/welcome"]').each(function(i, a) { a.href = a.href + params; });     
-    },
-    setTracking: function(params) {
-        if (!params) {
-            params = {};
-        }
-
-        var cookieData = CookieManager.getCookie(this.cookieName);
-        var pastValues =  cookieData ? JSON.parse(cookieData) : {};
-        
-        var tracking = Utils.spreadObject(pastValues, {});
-
-        if (!pastValues || !pastValues.subrefferrer) {
-            tracking.subrefferrer = document.referrer;
-        }
-
-        tracking = Utils.spreadObject(params, tracking);
-    
-        App.cookie.setCookie(App.cookie.trackingCookie, JSON.stringify(tracking));
-    }
-};
-
-var App = { 
-    init: function() {
-        App.query = Utils.getUrlParams();
-        App.tracking.setTracking(App.query);
-        App.tracking.handlePageLinks();
-    },
-    cookie: CookieManager,
-    query: Utils.getUrlParams(window.location.search),
-    tracking: TrackingApp
-};
-
-App.init();
+$(function() {
+  App.init();
+});
