@@ -42,7 +42,7 @@ App.setMkts = function(data) {
   if(data) App.mkts = data
   else {
     data = {}
-    var subdir = location.href.split('/')[1]
+    var subdir = location.pathname.split('/')[1]
 
     if(subdir) data.mkt_source = subdir
 

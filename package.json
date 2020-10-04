@@ -1,0 +1,13 @@
+{
+  "name": "mkt",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:inmemori/mkt.git",
+  "license": "MIT",
+  "scripts": {
+    "build": "minify src/app.js --out-file dist/index.js"
+  },
+  "dependencies": {
+    "babel-minify": "^0.5.1"
+  }
+}

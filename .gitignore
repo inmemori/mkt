@@ -1,0 +1,13 @@
+.DS_Store
+/.env*
+.eslintcache
+/.vscode
+/dump
+/logs
+/node_modules
+/npm-debug.log
+now*.json
+package-lock.json
+tmp.js
+tmp.txt
+yarn-error.log
