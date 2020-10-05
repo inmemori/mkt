@@ -33,7 +33,7 @@ App.init = function() {
 
 App.setTracking = function(data) {
   var tracking = $.extend({}, JSON.parse(Cookies.get('im_tracking') || '{}'), data)
-  if (!tracking.subrefferrer && document.referrer) tracking.subrefferrer = document.referrer
+  if (!tracking.subrefferrer && document.referrer && document.referrer.match(/([a-z]{2}\.inmemori\.com)/gm) == null) tracking.subrefferrer = document.referrer
   Cookies.set('im_tracking', JSON.stringify(tracking), { expires: 1, path: '/' })
   App.tracking = tracking
 }
