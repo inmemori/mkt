@@ -33,7 +33,7 @@ App.init = function() {
 
 App.setTracking = function(data) {
   var tracking = $.extend({}, JSON.parse(Cookies.get('im_mkt_tracking') || '{}'), data)
-  if (!tracking.subrefferrer && document.referrer && document.referrer.match(/([a-z]{2}\.inmemori\.com)/gm) == null) tracking.subrefferrer = document.referrer
+  if (!tracking.subreferer && document.referrer && document.referrer.match(/([a-z]{2}\.inmemori\.com)/gm) == null) tracking.subreferer = document.referrer
   Cookies.set('im_mkt_tracking', JSON.stringify(tracking), { expires: 1, path: '/', domain: 'inmemori.com' })
   App.tracking = tracking
 }
@@ -60,5 +60,4 @@ App.setMkts = function(data) {
 
 $(function() {
   App.init()
-  console.log('App', App)
 })
